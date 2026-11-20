@@ -1,0 +1,1028 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="An interactive analysis of NBA player careers, age and performance, three-point evolution, positions, and player efficiency.">
+<title>Inside the Numbers | NBA Advanced Statistics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+--bg:#0b1018;
+--panel:#121b27;
+--panel2:#172333;
+--line:#263548;
+--text:#edf3fa;
+--muted:#9eafc2;
+--orange:#ff793f;
+--blue:#58b7e8;
+--green:#7ed6ae;
+--gold:#f5c76b;
+--purple:#b49aff;
+--radius:18px;
+}
+
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+margin:0;
+background:var(--bg);
+color:var(--text);
+font-family:'DM Sans',sans-serif;
+line-height:1.6;
+}
+
+a { color:inherit; text-decoration:none; }
+
+.wrap {
+max-width:1180px;
+margin:auto;
+padding:0 28px;
+}
+
+header {
+border-bottom:1px solid var(--line);
+background:rgba(11,16,24,.9);
+position:sticky;
+top:0;
+z-index:20;
+backdrop-filter:blur(16px);
+}
+
+.nav {
+height:68px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+}
+
+.brand {
+font-family:'Space Grotesk';
+font-weight:700;
+letter-spacing:-.5px;
+}
+
+.brand span { color:var(--orange); }
+
+.navlinks {
+display:flex;
+gap:24px;
+color:var(--muted);
+font-size:13px;
+}
+
+.navlinks a:hover { color:var(--text); }
+
+.hero {
+padding:76px 0 54px;
+position:relative;
+overflow:hidden;
+}
+
+.eyebrow,.kicker {
+font-family:'DM Mono';
+font-size:11px;
+letter-spacing:1.8px;
+text-transform:uppercase;
+color:var(--orange);
+}
+
+h1,h2,h3,p { margin-top:0; }
+
+h1 {
+font:700 clamp(42px,7vw,76px)/.99 'Space Grotesk';
+letter-spacing:-3.5px;
+max-width:850px;
+margin:18px 0 24px;
+}
+
+h1 em {
+font-style:normal;
+color:var(--orange);
+}
+
+.hero-copy {
+max-width:700px;
+color:var(--muted);
+font-size:17px;
+}
+
+.hero-meta {
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-top:28px;
+}
+
+.pill {
+border:1px solid var(--line);
+border-radius:100px;
+padding:7px 12px;
+color:var(--muted);
+font:11px 'DM Mono';
+}
+
+.hero:after {
+content:'NBA';
+position:absolute;
+right:-10px;
+top:45px;
+font:700 clamp(130px,23vw,280px)/1 'Space Grotesk';
+color:rgba(255,255,255,.025);
+pointer-events:none;
+}
+
+.stats {
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:14px;
+margin:12px 0 72px;
+}
+
+.stat {
+background:var(--panel);
+border:1px solid var(--line);
+border-radius:var(--radius);
+padding:20px;
+}
+
+.stat strong {
+display:block;
+font:600 34px 'Space Grotesk';
+letter-spacing:-1px;
+}
+
+.stat span {
+font-size:12px;
+color:var(--muted);
+}
+
+section {
+padding:0 0 70px;
+scroll-margin-top:90px;
+}
+
+.section-head {
+display:flex;
+justify-content:space-between;
+align-items:end;
+gap:24px;
+margin-bottom:22px;
+}
+
+.section-head h2 {
+font:600 clamp(26px,4vw,36px)/1.1 'Space Grotesk';
+letter-spacing:-1.2px;
+margin:8px 0;
+}
+
+.section-head p {
+color:var(--muted);
+max-width:470px;
+margin:0;
+font-size:14px;
+}
+
+.question {
+display:inline-flex;
+align-items:center;
+gap:9px;
+color:var(--orange);
+font:11px 'DM Mono';
+text-transform:uppercase;
+letter-spacing:1.2px;
+}
+
+.num {
+width:24px;
+height:24px;
+border:1px solid rgba(255,121,63,.5);
+border-radius:50%;
+display:inline-grid;
+place-items:center;
+}
+
+.grid2 {
+display:grid;
+grid-template-columns:1.15fr .85fr;
+gap:16px;
+}
+
+.gridEqual {
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:16px;
+}
+
+.card {
+background:var(--panel);
+border:1px solid var(--line);
+border-radius:var(--radius);
+padding:22px;
+min-width:0;
+}
+
+.card h3 {
+font:600 17px 'Space Grotesk';
+margin:0 0 5px;
+}
+
+.sub {
+font-size:12px;
+color:var(--muted);
+margin-bottom:18px;
+}
+
+.chartbox {
+height:300px;
+position:relative;
+}
+
+.chartbox.tall { height:340px; }
+
+.insight {
+background:var(--panel2);
+border-left:3px solid var(--orange);
+padding:18px 20px;
+border-radius:0 12px 12px 0;
+margin-top:16px;
+color:#dce6f0;
+font-size:14px;
+}
+
+.insight b { color:#fff; }
+
+.insight .kicker {
+display:block;
+margin-bottom:7px;
+}
+
+.table-wrap { overflow-x:auto; }
+
+table {
+width:100%;
+border-collapse:collapse;
+font-size:13px;
+}
+
+th {
+text-align:left;
+color:var(--muted);
+font:10px 'DM Mono';
+text-transform:uppercase;
+letter-spacing:1px;
+padding:10px;
+border-bottom:1px solid var(--line);
+}
+
+td {
+padding:11px 10px;
+border-bottom:1px solid rgba(38,53,72,.7);
+}
+
+tbody tr:last-child td { border:0; }
+
+td.numcell {
+font-family:'DM Mono';
+font-size:12px;
+color:#dbe7f4;
+}
+
+.rank {
+color:var(--orange);
+font:11px 'DM Mono';
+}
+
+.answer {
+color:var(--muted);
+font-size:14px;
+margin:16px 0 0;
+}
+
+.answer strong { color:var(--text); }
+
+.note {
+background:#111d29;
+border:1px solid #2c4053;
+border-radius:14px;
+padding:20px 22px;
+color:var(--muted);
+font-size:13px;
+}
+
+.note strong { color:var(--text); }
+
+footer {
+border-top:1px solid var(--line);
+padding:28px 0 42px;
+color:var(--muted);
+font-size:12px;
+}
+
+.footer-row {
+display:flex;
+justify-content:space-between;
+gap:20px;
+flex-wrap:wrap;
+}
+
+@media(max-width:850px) {
+.navlinks { gap:12px; }
+.grid2,.gridEqual { grid-template-columns:1fr; }
+.stats { grid-template-columns:repeat(2,1fr); }
+.hero { padding-top:55px; }
+}
+
+@media(max-width:540px) {
+.wrap { padding:0 17px; }
+.nav { height:auto; min-height:62px; }
+.navlinks { display:none; }
+h1 { letter-spacing:-2px; }
+.stats { gap:9px; }
+.stat { padding:15px; }
+.stat strong { font-size:27px; }
+.card { padding:16px; }
+.chartbox { height:260px; }
+.section-head { display:block; }
+.section-head p { margin-top:10px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="wrap nav">
+<a class="brand" href="#top">INSIDE THE <span>NUMBERS.</span></a>
+<nav class="navlinks">
+<a href="#longevity">Longevity</a>
+<a href="#age">Age</a>
+<a href="#threes">Three-point</a>
+<a href="#positions">Positions</a>
+<a href="#efficiency">Efficiency</a>
+</nav>
+</div>
+</header>
+
+<main id="top" class="wrap">
+
+<div class="hero">
+<div class="eyebrow">A data-driven look at the NBA · 1950–2026</div>
+<h1>Basketball,<br><em>by the numbers.</em></h1>
+<p class="hero-copy">
+What does a long NBA career look like? When do players reach their peak?
+How did the three-point shot reshape the game?
+This project explores five questions using historical player-season advanced statistics.
+</p>
+<div class="hero-meta">
+<span class="pill">SOURCE · ADVANCED.CSV</span>
+<span class="pill">NBA ONLY</span>
+<span class="pill">COMPLETED SEASONS THROUGH 2026</span>
+<span class="pill">INTERACTIVE DATA</span>
+</div>
+</div>
+
+<div class="stats">
+<div class="stat"><strong>4,789</strong><span>Unique NBA players in the dataset</span></div>
+<div class="stat"><strong>4.7</strong><span>Average active seasons per player</span></div>
+<div class="stat"><strong>3</strong><span>Median active seasons</span></div>
+<div class="stat"><strong>1950–2026</strong><span>NBA seasons analyzed</span></div>
+</div>
+
+<!-- QUESTION 1: CAREER LONGEVITY -->
+
+<section id="longevity">
+
+<div class="section-head">
+<div>
+<div class="question"><span class="num">01</span> Career longevity</div>
+<h2>Who sticks around?</h2>
+</div>
+<p>Career length is measured as the number of distinct NBA seasons in which a player appears in the dataset.</p>
+</div>
+
+<div class="grid2">
+
+<div class="card">
+<h3>Average career by position group</h3>
+<div class="sub">Distinct active seasons · player's most common listed position</div>
+<div class="chartbox"><canvas id="careerChart"></canvas></div>
+</div>
+
+<div class="card">
+<h3>The longest careers</h3>
+<div class="sub">Players with the most recorded NBA seasons</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Player</th><th>Seasons</th><th>Span</th></tr>
+</thead>
+<tbody id="longestTable"></tbody>
+</table>
+</div>
+
+<div class="insight">
+<span class="kicker">What stands out</span>
+<b>Centers and power forwards</b> have the highest average career counts in this dataset. LeBron James leads the recorded list with 23 seasons through 2026.
+</div>
+</div>
+
+</div>
+
+<p class="answer">
+<strong>Answer:</strong> The average player appears in about 4.7 seasons, while the median is 3. The distribution is uneven: many players appear for only one or a few seasons, while a small group sustains careers for 15–20+ seasons. Position differences are descriptive, not proof that position itself causes longer careers.
+</p>
+
+</section>
+
+<!-- QUESTION 2: AGE AND PERFORMANCE -->
+
+<section id="age">
+
+<div class="section-head">
+<div>
+<div class="question"><span class="num">02</span> Age and performance</div>
+<h2>When do players peak?</h2>
+</div>
+<p>PER and BPM offer two different lenses on performance. The averages below compare player-seasons by age band.</p>
+</div>
+
+<div class="grid2">
+
+<div class="card">
+<h3>Performance across age bands</h3>
+<div class="sub">Average PER and Box Plus/Minus (BPM) · all player-seasons</div>
+<div class="chartbox tall"><canvas id="ageChart"></canvas></div>
+</div>
+
+<div class="card">
+<h3>Older players who still excelled</h3>
+<div class="sub">Selected seasons at age 35+ with at least 500 minutes, ranked by PER</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Player</th><th>Season</th><th>Age</th><th>PER</th><th>BPM</th></tr>
+</thead>
+<tbody id="olderTable"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<p class="answer">
+<strong>Answer:</strong> In this dataset, average PER is highest in the <b>28–30</b> age band. Performance is lower on average among the youngest groups, rises through the mid-to-late twenties, and generally declines after age 30. That pattern is an average, not a rule for every player. Karl Malone and LeBron James are examples of players who posted outstanding advanced metrics after age 35.
+</p>
+
+<div class="insight">
+<span class="kicker">How to read this</span>
+<b>PER</b> is a per-minute individual productivity metric.
+<b>BPM</b> estimates a player's point impact per 100 possessions relative to league average.
+Neither is a direct measure of points, assists, or rebounds.
+</div>
+
+</section>
+
+<!-- QUESTION 3: THREE-POINT EVOLUTION -->
+
+<section id="threes">
+
+<div class="section-head">
+<div>
+<div class="question"><span class="num">03</span> Three-point evolution</div>
+<h2>The arc of the three.</h2>
+</div>
+<p>The dataset records three-point attempt rate (3PAr), the share of field-goal attempts that are three-pointers—not raw attempts per game.</p>
+</div>
+
+<div class="card">
+<h3>Three-point attempts as a share of all field-goal attempts</h3>
+<div class="sub">Minutes-weighted average 3PAr by season · NBA · 1980–2026</div>
+<div class="chartbox tall"><canvas id="threeChart"></canvas></div>
+</div>
+
+<p class="answer">
+<strong>Answer:</strong> The three-point attempt share rises dramatically over the period. It moves from about <b>2.9% in 1980</b> to <b>41.2% in 2026</b>. This supports the conclusion that the three-point shot became a much larger part of NBA shot selection. Because this file does not include individual 3-point attempt totals, it cannot identify who made the most threes or quantify a player's exact contribution to the league-wide increase.
+</p>
+
+</section>
+
+<!-- QUESTION 4: POSITIONAL ANALYSIS -->
+
+<section id="positions">
+
+<div class="section-head">
+<div>
+<div class="question"><span class="num">04</span> Positional analysis</div>
+<h2>Different roles, different strengths.</h2>
+</div>
+<p>Guards combine point guards and shooting guards; forwards combine small and power forwards. Centers are analyzed separately.</p>
+</div>
+
+<div class="grid2">
+
+<div class="card">
+<h3>Role comparison</h3>
+<div class="sub">Average advanced rates by broad position group</div>
+<div class="chartbox tall"><canvas id="positionChart"></canvas></div>
+</div>
+
+<div class="card">
+<h3>What each position brings</h3>
+<div class="sub">Average rate statistics across player-seasons</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Position</th><th>PER</th><th>TRB%</th><th>AST%</th><th>BPM</th></tr>
+</thead>
+<tbody id="positionTable"></tbody>
+</table>
+</div>
+
+<div class="insight">
+<span class="kicker">The positional pattern</span>
+Centers lead in <b>rebound percentage and PER</b>; guards lead in <b>assist percentage</b>. Forwards sit between those groups in rebounding and playmaking rates.
+</div>
+</div>
+
+</div>
+
+<p class="answer">
+<strong>Answer:</strong> The data reflects familiar role differences. Centers have the highest average rebound percentage, while guards have the highest average assist percentage. Centers also show the highest average PER in this grouping. BPM is relatively close across groups and is negative on average for all three, which reflects the inclusion of every player-season—not just stars or starters.
+</p>
+
+</section>
+
+<!-- QUESTION 5: PLAYER EFFICIENCY -->
+
+<section id="efficiency">
+
+<div class="section-head">
+<div>
+<div class="question"><span class="num">05</span> Player efficiency</div>
+<h2>Greatness, measured two ways.</h2>
+</div>
+<p>Career-weighted averages identify players with consistently high advanced metrics. A 10,000-minute minimum reduces the influence of tiny samples.</p>
+</div>
+
+<div class="gridEqual">
+
+<div class="card">
+<h3>Career PER leaders</h3>
+<div class="sub">Minutes-weighted career PER · minimum 10,000 NBA minutes</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Player</th><th>PER</th><th>Seasons</th></tr>
+</thead>
+<tbody id="perTable"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h3>Career BPM leaders</h3>
+<div class="sub">Minutes-weighted career BPM · minimum 10,000 NBA minutes</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Player</th><th>BPM</th><th>Seasons</th></tr>
+</thead>
+<tbody id="bpmTable"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<div class="insight">
+<span class="kicker">PER vs. BPM</span>
+<b>PER</b> emphasizes individual box-score productivity and efficiency.
+<b>BPM</b> estimates overall per-possession impact, including offense and defense.
+The leaders overlap, but the rankings differ—one reason efficiency is better understood with multiple metrics rather than a single number.
+</div>
+
+<p class="answer">
+<strong>Answer:</strong> Nikola Jokić, Michael Jordan, and LeBron James rank near the top in both career-weighted measures among players meeting the minutes threshold. PER and BPM tell related but not identical stories. VORP is also included in the source and can represent cumulative value above a replacement-level player, but the career leader tables here use PER and BPM for easier comparison.
+</p>
+
+</section>
+
+<!-- METHODOLOGY -->
+
+<section id="method">
+
+<div class="section-head">
+<div>
+<div class="question">Methodology & limitations</div>
+<h2>What the data can—and can't—say.</h2>
+</div>
+</div>
+
+<div class="note">
+
+<p>
+<strong>Source:</strong> The uploaded <code>Advanced.csv</code> file. The file contains NBA, ABA, and BAA rows; this project filters to rows labeled NBA and seasons through 2026. The 2027 season is excluded because it is in progress.
+</p>
+
+<p>
+<strong>Traded players:</strong> Where the file provides a 2TM combined row for a player-season, that aggregate is used instead of the separate team rows. Where no combined row exists, team stints are combined; rate statistics are weighted by minutes to avoid double-counting a traded player.
+</p>
+
+<p>
+<strong>Career length:</strong> Count of distinct seasons with a player record in this dataset. It is not necessarily a complete measure of time spent under contract or years between debut and retirement.
+</p>
+
+<p>
+<strong>Three-point trend:</strong> 3PAr is the proportion of field-goal attempts that are three-point attempts. It is not 3-point attempts per game. The chart starts in 1980, when the three-point line was introduced in the NBA.
+</p>
+
+<p>
+<strong>Limitations:</strong> The file does not include traditional points, assists, rebounds, salary, All-Star selections, nationality, or raw three-point attempts. Therefore, the project does not make claims about scoring leaders, salary value, All-Star correlations, international representation, or traditional per-game averages. Results are descriptive and do not establish causation.
+</p>
+
+</div>
+</section>
+
+</main>
+
+<footer>
+<div class="wrap footer-row">
+<span>INSIDE THE NUMBERS · NBA ADVANCED STATISTICS PROJECT</span>
+<span>Built from the supplied Advanced.csv dataset · GitHub Pages ready</span>
+</div>
+</footer>
+
+<script>
+
+// DATA USED TO GENERATE THE TABLES AND CHARTS
+
+const DATA = {
+"careerGroups": [
+{"label":"Guards","mean":4.68,"median":3,"players":1900},
+{"label":"Forwards","mean":4.92,"median":3,"players":1841},
+{"label":"Centers","mean":5.51,"median":4,"players":813}
+],
+
+"age": [
+{"age":"20 or younger","per":12.48,"bpm":-2.56,"ws48":0.055,"n":1550},
+{"age":"21–24","per":12.4,"bpm":-2.13,"ws48":0.059,"n":7173},
+{"age":"25–27","per":13.55,"bpm":-1.14,"ws48":0.081,"n":6072},
+{"age":"28–30","per":13.64,"bpm":-0.84,"ws48":0.089,"n":4161},
+{"age":"31–33","per":12.92,"bpm":-1.15,"ws48":0.084,"n":2454},
+{"age":"34–36","per":12.72,"bpm":-1.14,"ws48":0.089,"n":970},
+{"age":"37+","per":11.85,"bpm":-1.66,"ws48":0.077,"n":316}
+],
+
+"threes": [
+{"season":1980,"rate":2.93},
+{"season":1981,"rate":2.21},
+{"season":1982,"rate":2.53},
+{"season":1983,"rate":2.45},
+{"season":1984,"rate":2.59},
+{"season":1985,"rate":3.39},
+{"season":1986,"rate":3.68},
+{"season":1987,"rate":5.22},
+{"season":1988,"rate":5.4},
+{"season":1989,"rate":7.28},
+{"season":1990,"rate":7.53},
+{"season":1991,"rate":7.87},
+{"season":1992,"rate":8.26},
+{"season":1993,"rate":10.08},
+{"season":1994,"rate":11.39},
+{"season":1995,"rate":17.82},
+{"season":1996,"rate":19.8},
+{"season":1997,"rate":20.52},
+{"season":1998,"rate":15.4},
+{"season":1999,"rate":16.79},
+{"season":2000,"rate":16.59},
+{"season":2001,"rate":17.33},
+{"season":2002,"rate":17.45},
+{"season":2003,"rate":17.49},
+{"season":2004,"rate":18.3},
+{"season":2005,"rate":18.54},
+{"season":2006,"rate":19.37},
+{"season":2007,"rate":20.27},
+{"season":2008,"rate":21.9},
+{"season":2009,"rate":21.69},
+{"season":2010,"rate":22.26},
+{"season":2011,"rate":21.6},
+{"season":2012,"rate":22.58},
+{"season":2013,"rate":24.16},
+{"season":2014,"rate":25.77},
+{"season":2015,"rate":26.8},
+{"season":2016,"rate":28.11},
+{"season":2017,"rate":31.38},
+{"season":2018,"rate":33.65},
+{"season":2019,"rate":35.49},
+{"season":2020,"rate":38.31},
+{"season":2021,"rate":39.9},
+{"season":2022,"rate":39.65},
+{"season":2023,"rate":38.28},
+{"season":2024,"rate":39.54},
+{"season":2025,"rate":42.58},
+{"season":2026,"rate":41.21}
+],
+
+"positions": [
+{"position":"Center","per":13.86,"trb":15.19,"ast":7.74,"bpm":-1.81,"n":4470},
+{"position":"Forward","per":12.97,"trb":11.3,"ast":9.66,"bpm":-1.56,"n":8988},
+{"position":"Guard","per":12.7,"trb":6.22,"ast":19.65,"bpm":-1.31,"n":8908}
+],
+
+"perLeaders": [
+{"player":"Nikola Jokić","value":28.83,"seasons":11},
+{"player":"Joel Embiid","value":27.99,"seasons":10},
+{"player":"Michael Jordan","value":27.9,"seasons":15},
+{"player":"Shaquille O'Neal","value":26.84,"seasons":18},
+{"player":"Anthony Davis","value":26.71,"seasons":13},
+{"player":"LeBron James","value":26.68,"seasons":23},
+{"player":"David Robinson","value":26.17,"seasons":14},
+{"player":"Giannis Antetokounmpo","value":26.08,"seasons":13},
+{"player":"Luka Dončić","value":26.07,"seasons":7},
+{"player":"Wilt Chamberlain","value":25.97,"seasons":13}
+],
+
+"bpmLeaders": [
+{"player":"Nikola Jokić","value":10.62,"seasons":11},
+{"player":"Michael Jordan","value":9.21,"seasons":15},
+{"player":"LeBron James","value":8.36,"seasons":23},
+{"player":"Luka Dončić","value":7.95,"seasons":7},
+{"player":"Magic Johnson","value":7.53,"seasons":13},
+{"player":"David Robinson","value":7.49,"seasons":14},
+{"player":"Larry Bird","value":6.88,"seasons":13},
+{"player":"Giannis Antetokounmpo","value":6.84,"seasons":13},
+{"player":"John Stockton","value":6.83,"seasons":19},
+{"player":"Joel Embiid","value":6.7,"seasons":10}
+],
+
+"older": [
+{"player":"Karl Malone","season":2000,"age":36,"per":27.1,"bpm":7.5},
+{"player":"LeBron James","season":2022,"age":37,"per":26.2,"bpm":7.7},
+{"player":"Karl Malone","season":1999,"age":35,"per":25.6,"bpm":6.7},
+{"player":"LeBron James","season":2020,"age":35,"per":25.5,"bpm":8.4},
+{"player":"Karl Malone","season":2001,"age":37,"per":24.7,"bpm":6.6},
+{"player":"Tim Duncan","season":2013,"age":36,"per":24.4,"bpm":5.3},
+{"player":"LeBron James","season":2021,"age":36,"per":24.2,"bpm":8.1},
+{"player":"LeBron James","season":2023,"age":38,"per":23.9,"bpm":6.1}
+],
+
+"longest": [
+{"player":"LeBron James","seasons":23,"years":"2004–2026"},
+{"player":"Chris Paul","seasons":21,"years":"2006–2026"},
+{"player":"Dirk Nowitzki","seasons":21,"years":"1999–2019"},
+{"player":"Robert Parish","seasons":21,"years":"1977–1997"},
+{"player":"Udonis Haslem","seasons":20,"years":"2004–2023"},
+{"player":"Vince Carter","seasons":20,"years":"1999–2020"},
+{"player":"Kobe Bryant","seasons":20,"years":"1997–2016"},
+{"player":"Kevin Garnett","seasons":20,"years":"1996–2016"}
+]
+};
+
+// CHART CONFIGURATION
+
+const C = {
+orange:'#ff793f',
+blue:'#58b7e8',
+green:'#7ed6ae',
+gold:'#f5c76b',
+purple:'#b49aff',
+muted:'#9eafc2',
+grid:'rgba(158,175,194,.13)'
+};
+
+Chart.defaults.color=C.muted;
+Chart.defaults.font.family="'DM Sans', sans-serif";
+Chart.defaults.plugins.legend.labels.usePointStyle=true;
+
+const baseOpts = {
+responsive:true,
+maintainAspectRatio:false,
+plugins:{
+legend:{
+position:'bottom',
+labels:{boxWidth:8,padding:16}
+},
+tooltip:{
+backgroundColor:'#172333',
+borderColor:'#34485d',
+borderWidth:1,
+titleColor:'#fff',
+bodyColor:'#dce6f0',
+padding:11
+}
+},
+scales:{
+x:{
+grid:{display:false},
+ticks:{color:C.muted}
+},
+y:{
+grid:{color:C.grid},
+ticks:{color:C.muted}
+}
+}
+};
+
+function makeChart(id,type,data,opts={}) {
+new Chart(document.getElementById(id),{
+type,
+data,
+options:{...baseOpts,...opts}
+});
+}
+
+const tableRows=(arr,fn)=>arr.map(fn).join('');
+
+// POPULATE TABLES
+
+document.getElementById('longestTable').innerHTML =
+tableRows(DATA.longest,(x,i)=>`
+<tr>
+<td>${i===0?'<span class="rank">01</span> ':''}${x.player}</td>
+<td class="numcell">${x.seasons}</td>
+<td class="numcell">${x.years}</td>
+</tr>
+`);
+
+document.getElementById('olderTable').innerHTML =
+tableRows(DATA.older,x=>`
+<tr>
+<td>${x.player}</td>
+<td class="numcell">${x.season}</td>
+<td class="numcell">${x.age}</td>
+<td class="numcell">${x.per}</td>
+<td class="numcell">${x.bpm}</td>
+</tr>
+`);
+
+document.getElementById('positionTable').innerHTML =
+tableRows(DATA.positions,x=>`
+<tr>
+<td>${x.position}</td>
+<td class="numcell">${x.per}</td>
+<td class="numcell">${x.trb}</td>
+<td class="numcell">${x.ast}</td>
+<td class="numcell">${x.bpm}</td>
+</tr>
+`);
+
+document.getElementById('perTable').innerHTML =
+tableRows(DATA.perLeaders,(x,i)=>`
+<tr>
+<td class="rank">${i+1}</td>
+<td>${x.player}</td>
+<td class="numcell">${x.value.toFixed(2)}</td>
+<td class="numcell">${x.seasons}</td>
+</tr>
+`);
+
+document.getElementById('bpmTable').innerHTML =
+tableRows(DATA.bpmLeaders,(x,i)=>`
+<tr>
+<td class="rank">${i+1}</td>
+<td>${x.player}</td>
+<td class="numcell">${x.value.toFixed(2)}</td>
+<td class="numcell">${x.seasons}</td>
+</tr>
+`);
+
+// CHART 1: CAREER LONGEVITY
+
+makeChart('careerChart','bar',{
+labels:DATA.careerGroups.map(x=>x.label),
+datasets:[{
+label:'Average seasons',
+data:DATA.careerGroups.map(x=>x.mean),
+backgroundColor:[C.blue,C.orange,C.green],
+borderRadius:7,
+borderSkipped:false
+}]
+},{
+indexAxis:'y',
+plugins:{legend:{display:false}},
+scales:{
+x:{beginAtZero:true,grid:{color:C.grid}},
+y:{grid:{display:false}}
+}
+});
+
+// CHART 2: AGE AND PERFORMANCE
+
+makeChart('ageChart','line',{
+labels:DATA.age.map(x=>x.age),
+datasets:[
+{
+label:'PER',
+data:DATA.age.map(x=>x.per),
+borderColor:C.orange,
+backgroundColor:C.orange,
+pointRadius:3,
+tension:.3,
+yAxisID:'y'
+},
+{
+label:'BPM',
+data:DATA.age.map(x=>x.bpm),
+borderColor:C.blue,
+backgroundColor:C.blue,
+pointRadius:3,
+tension:.3,
+yAxisID:'y1'
+}
+]
+},{
+scales:{
+x:{grid:{display:false}},
+y:{
+position:'left',
+grid:{color:C.grid},
+title:{display:true,text:'PER'}
+},
+y1:{
+position:'right',
+grid:{drawOnChartArea:false},
+title:{display:true,text:'BPM'}
+}
+}
+});
+
+// CHART 3: THREE-POINT EVOLUTION
+
+makeChart('threeChart','line',{
+labels:DATA.threes.map(x=>x.season),
+datasets:[{
+label:'3P attempt rate',
+data:DATA.threes.map(x=>x.rate),
+borderColor:C.orange,
+backgroundColor:'rgba(255,121,63,.12)',
+fill:true,
+tension:.28,
+pointRadius:0,
+pointHitRadius:8,
+borderWidth:2.5
+}]
+},{
+plugins:{
+legend:{display:false},
+tooltip:{
+callbacks:{
+label:c=>`${c.parsed.y.toFixed(1)}% of field-goal attempts`
+}
+}
+},
+scales:{
+x:{
+grid:{display:false},
+ticks:{maxTicksLimit:12}
+},
+y:{
+beginAtZero:true,
+ticks:{callback:v=>v+'%'},
+grid:{color:C.grid}
+}
+}
+});
+
+// CHART 4: POSITIONAL ANALYSIS
+
+makeChart('positionChart','bar',{
+labels:DATA.positions.map(x=>x.position),
+datasets:[
+{
+label:'PER',
+data:DATA.positions.map(x=>x.per),
+backgroundColor:C.orange,
+borderRadius:5
+},
+{
+label:'Rebound %',
+data:DATA.positions.map(x=>x.trb),
+backgroundColor:C.blue,
+borderRadius:5
+},
+{
+label:'Assist %',
+data:DATA.positions.map(x=>x.ast),
+backgroundColor:C.green,
+borderRadius:5
+}
+]
+},{
+scales:{
+x:{grid:{display:false}},
+y:{grid:{color:C.grid}}
+}
+});
+
+</script>
+
+</body>
+</html>
